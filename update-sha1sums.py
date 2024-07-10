@@ -20,54 +20,62 @@ import os
 import sys
 from hashlib import sha1
 
-device='sm6225-common'
-vendor='xiaomi'
+device = 'sm8250-common'
+vendor = 'xiaomi'
 
-with open('proprietary-files.txt', 'r') as f:
-    lines = f.read().splitlines()
-vendorPath = '../../../vendor/' + vendor + '/' + device + '/proprietary'
-needSHA1 = False
+def process_file(file_name, cleanup_mode=False):
+    with open(file_name, 'r') as f:
+        lines = f.read().splitlines()
 
+    vendorPath = '../../../vendor/' + vendor + '/' + device + '/proprietary'
+    needSHA1 = False
 
-def cleanup():
-    for index, line in enumerate(lines):
-        # Skip empty or commented lines
-        if len(line) == 0 or line[0] == '#' or '|' not in line:
-            continue
+    def cleanup():
+        for index, line in enumerate(lines):
+            # Skip empty or commented lines
+            if len(line) == 0 or line[0] == '#' or '|' not in line:
+                continue
 
-        # Drop SHA1 hash, if existing
-        lines[index] = line.split('|')[0]
+            # Drop SHA1 hash, if existing
+            lines[index] = line.split('|')[0]
 
+    def update():
+        nonlocal needSHA1
+        for index, line in enumerate(lines):
+            # Skip empty lines
+            if len(line) == 0:
+                continue
 
-def update():
-    for index, line in enumerate(lines):
-        # Skip empty lines
-        if len(line) == 0:
-            continue
+            # Check if we need to set SHA1 hash for the next files
+            if line[0] == '#':
+                needSHA1 = (' - from' in line)
+                continue
 
-        # Check if we need to set SHA1 hash for the next files
-        if line[0] == '#':
-            needSHA1 = (' - from' in line)
-            continue
+            if needSHA1:
+                # Remove existing SHA1 hash
+                line = line.split('|')[0]
 
-        if needSHA1:
-            # Remove existing SHA1 hash
-            line = line.split('|')[0]
+                filePath = line.split(';')[0].split(':')[-1]
+                if filePath[0] == '-':
+                    filePath = filePath[1:]
 
-            filePath = line.split(';')[0].split(':')[-1]
-            if filePath[0] == '-':
-                filePath = filePath[1:]
+                with open(os.path.join(vendorPath, filePath), 'rb') as f:
+                    hash = sha1(f.read()).hexdigest()
 
-            with open(os.path.join(vendorPath, filePath), 'rb') as f:
-                hash = sha1(f.read()).hexdigest()
+                lines[index] = '%s|%s' % (line, hash)
 
-            lines[index] = '%s|%s' % (line, hash)
+    if cleanup_mode:
+        cleanup()
+    else:
+        update()
 
+    with open(file_name, 'w') as file:
+        file.write('\n'.join(lines) + '\n')
 
 if len(sys.argv) == 2 and sys.argv[1] == '-c':
-    cleanup()
+    cleanup_mode = True
 else:
-    update()
+    cleanup_mode = False
 
-with open('proprietary-files.txt', 'w') as file:
-    file.write('\n'.join(lines) + '\n')
+process_file('proprietary-files.txt', cleanup_mode)
+process_file('proprietary-files-phone.txt', cleanup_mode)
