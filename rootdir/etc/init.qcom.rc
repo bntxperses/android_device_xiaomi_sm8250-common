@@ -43,10 +43,6 @@ on early-init
     chown root system /dev/kmsg
     chmod 0620 /dev/kmsg
 
-    # Workarround for cache
-    rm /data/resource-cache
-    rm /data/system/package_cache 
-
 on init
 
     # Support legacy paths
@@ -394,6 +390,10 @@ on post-fs-data
 
     #Create dir for dolby
     mkdir /data/vendor/dolby 0770 media media
+
+    # Workarround for cache
+    rm /data/resource-cache
+    rm /data/system/package_cache
 
 service nqnfcinfo /system/vendor/bin/nqnfcinfo
     class late_start
