@@ -349,9 +349,6 @@
          to enable/disable DC dimming. -->
     <string name="config_deviceDcDimmingSysfsNode">/sys/devices/platform/soc/soc:qcom,dsi-display-primary/msm_fb_ea_enable</string>
 
-    <!-- Whether to show volume steps settings -->
-    <bool name="config_supports_volume_steps" translatable="false">true</bool>
-
     <!-- The list of package IDs that are allowed to skip camera high frame rate checks. -->
     <string-array name="config_cameraHFRPrivAppList" translatable="false">
         <item>com.android.camera</item>
